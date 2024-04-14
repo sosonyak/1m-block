@@ -15,6 +15,8 @@
 #define TCP 6
 
 
+int res = 0;
+
 struct return_tuple{
     int id_val;
     int harm_check;
@@ -82,7 +84,8 @@ const char* get_hostname(const char* data){
 
 
 int callback(void* no_use, int argc, char** argv, char** azColName) {
-    return (argc > 0) ? 1 : 0;
+    res = (argc > 0) ? 1 : 0;
+    return 0;
 }
 
 
@@ -117,9 +120,8 @@ int check_HarmOrNot(const char* data_buf, const char* harm_db){
     char* sql_query = (char*)malloc(query_len);
     int size = sprintf(sql_query, "%s", base_query);
     sprintf(sql_query+size, "%s\'", hostname);
-    int res = 10;
 
-    rc = sqlite3_exec(db, sql_query, callback, &res, &err_msg);
+    rc = sqlite3_exec(db, sql_query, callback, 0, &err_msg);
     if (rc != SQLITE_OK ) {
         fprintf(stderr, "Failed to select data\n");
         fprintf(stderr, "SQL error: %s\n", err_msg);
@@ -133,6 +135,7 @@ int check_HarmOrNot(const char* data_buf, const char* harm_db){
 
     printf("res: %s", res);
     free((void*)hostname);
+    sqlite3_close(db);
     return res;
 }
 
