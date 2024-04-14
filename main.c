@@ -84,6 +84,11 @@ const char* get_hostname(const char* data){
 
 
 int callback(void* no_use, int argc, char** argv, char** azColName) {
+    for (int i = 0; i < argc; i++){
+        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+
     res = (argc > 0) ? 1 : 0;
     return 0;
 }
@@ -96,13 +101,12 @@ int check_HarmOrNot(const char* data_buf, const char* harm_db){
         printf("No host name\n");
         return 0;
     }
-
-    char initial = hostname[0];
+    // printf("hostname: ", hostname);
 
     sqlite3* db;
     char* err_msg = 0;
 
-    printf("[\tHARM DB NAME\t]: %s\n", harm_db);
+    // // printf("[\tHARM DB NAME\t]: %s\n", harm_db);
     int rc = sqlite3_open(harm_db, &db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n",
@@ -113,13 +117,15 @@ int check_HarmOrNot(const char* data_buf, const char* harm_db){
 
         return -1;
     }
+////// here is the spot making error
+    int base_size = strlen("SELECT * FROM table_X WHERE name=\'");
+    int host_size = strlen(hostname);
 
-    char* base_query = "SELECT * FROM table_X WHERE name=\'";
-    base_query[20] = initial;
-    int query_len = strlen(base_query) + strlen(hostname) + 1;
+    int query_len = base_size + host_size + 1;
     char* sql_query = (char*)malloc(query_len);
-    int size = sprintf(sql_query, "%s", base_query);
-    sprintf(sql_query+size, "%s\'", hostname);
+
+    sprintf(sql_query, "SELECT * FROM table_%c WHERE name='%s'", hostname[0], hostname);
+    printf("[[SQL QUERY]: %s\n", sql_query);
 
     rc = sqlite3_exec(db, sql_query, callback, 0, &err_msg);
     if (rc != SQLITE_OK ) {
@@ -133,7 +139,7 @@ int check_HarmOrNot(const char* data_buf, const char* harm_db){
         return -1;
     }
 
-    printf("res: %s", res);
+    // printf("rc: %s", rc);
     free((void*)hostname);
     sqlite3_close(db);
     return res;
@@ -147,7 +153,7 @@ int dump(unsigned char* buf, int size, const char* harm_db) {
         int ip_len = (buf[0]&0x0f)*4;
         int http_flag = 0;
 
-        volatile int data_offset = 12;
+        int data_offset = 12;
         int n = ip_len + data_offset;
         data_offset = ip_len + ((buf[n]>>4)&0x0f)*4;
 
@@ -157,6 +163,7 @@ int dump(unsigned char* buf, int size, const char* harm_db) {
             char* http_new = (char*)realloc(http, size-data_offset);
             if (http_new == NULL){
                 printf("HTTP Memory realloc failed\n");
+                return -1;
             }
             else {
                 http = http_new;
@@ -180,7 +187,9 @@ int dump(unsigned char* buf, int size, const char* harm_db) {
 
             return result;
         }
+        return 0;
     }
+    return 0;
 }
 
 
