@@ -60,7 +60,7 @@ const char* get_hostname(const char* data){
         return NULL;
     }
 
-    size_t end_point = e_match[0].rm_so;
+    size_t end_point = e_match[0].rm_so - 2; // \r\n
 
     size_t host_len = end_point - start_point;
     // printf("LENGTH: %d\n", host_len);
